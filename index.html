@@ -111,6 +111,127 @@ load();render();
 
   // Exemplo: enviar uma mensagem para todos os jogadores
   game.broadcast("Olá, bem-vindo ao jogo!");
+ 
 </script>
+ <!DOCTYPE html>
+<html>
+<head>
+  <title>Mega Imóveis Online</title>
+</head>
+<body>
+  <!-- Conteúdo do jogo -->
+  <div id="status"></div>
+
+  <!-- Biblioteca NetplayJS -->
+  <script src="https://unpkg.com/netplayjs"></script>
+  <script>
+    const game = new Netplay.Game("mega-imoveis-online");
+
+    game.on("connect", () => {
+      console.log("Jogador conectado!");
+    });
+
+    // -----------------------------
+    // 📌 Compras sincronizadas
+    // -----------------------------
+    function buy(property) {
+      atualizarInterfaceCompra(property);
+      game.broadcast({ action: "buy", property });
+    }
+
+    game.on("message", (msg) => {
+      if (msg.action === "buy") atualizarInterfaceCompra(msg.property);
+    });
+
+    function atualizarInterfaceCompra(property) {
+      const el = document.getElementById(property);
+      if (el) el.classList.add("comprado");
+    }
+
+    // -----------------------------
+    // 📌 Movimentos sincronizados
+    // -----------------------------
+    function moverPeca(jogador, novaPosicao) {
+      atualizarTabuleiro(jogador, novaPosicao);
+      game.broadcast({ action: "move", jogador, novaPosicao });
+    }
+
+    game.on("message", (msg) => {
+      if (msg.action === "move") atualizarTabuleiro(msg.jogador, msg.novaPosicao);
+    });
+
+    function atualizarTabuleiro(jogador, novaPosicao) {
+      const el = document.getElementById("peca-" + jogador);
+      if (el) {
+        el.style.left = novaPosicao.x + "px";
+        el.style.top = novaPosicao.y + "px";
+      }
+    }
+
+    // -----------------------------
+    // 📌 Fim de turno sincronizado
+    // -----------------------------
+    function endTurn(jogadorAtual) {
+      atualizarFimTurno(jogadorAtual);
+      game.broadcast({ action: "endTurn", jogadorAtual });
+    }
+
+    game.on("message", (msg) => {
+      if (msg.action === "endTurn") atualizarFimTurno(msg.jogadorAtual);
+    });
+
+    function atualizarFimTurno(jogadorAtual) {
+      const status = document.getElementById("status");
+      if (status) status.innerText = "Turno de " + jogadorAtual + " finalizado!";
+    }
+
+    // -----------------------------
+    // 📌 Nova partida sincronizada
+    // -----------------------------
+    function newGame() {
+      resetarTabuleiro();
+      resetarCompras();
+      game.broadcast({ action: "newGame" });
+    }
+
+    game.on("message", (msg) => {
+      if (msg.action === "newGame") {
+        resetarTabuleiro();
+        resetarCompras();
+      }
+    });
+
+    function resetarTabuleiro() {
+      const pecas = document.querySelectorAll("[id^='peca-']");
+      pecas.forEach(el => {
+        el.style.left = "0px";
+        el.style.top = "0px";
+      });
+    }
+
+    function resetarCompras() {
+      const imoveis = document.querySelectorAll(".comprado");
+      imoveis.forEach(el => el.classList.remove("comprado"));
+    }
+
+    // -----------------------------
+    // 📌 Game Over sincronizado
+    // -----------------------------
+    function gameOver(vencedor) {
+      mostrarGameOver(vencedor);
+      game.broadcast({ action: "gameOver", vencedor });
+    }
+
+    game.on("message", (msg) => {
+      if (msg.action === "gameOver") mostrarGameOver(msg.vencedor);
+    });
+
+    function mostrarGameOver(vencedor) {
+      const status = document.getElementById("status");
+      if (status) status.innerText = "🏆 Fim de jogo! Vencedor: " + vencedor;
+    }
+  </script>
+</body>
+</html>
 </body>
 </html>
