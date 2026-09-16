@@ -99,5 +99,18 @@ function setupSave(){state.players[0].name=document.getElementById("i1").value.t
 function newGame(){state=fresh();save();render()}
 load();render();
 </script>
+ <script src="https://unpkg.com/netplayjs"></script>
+<script>
+  // Cria uma sala chamada "mega-imoveis-online"
+  const game = new Netplay.Game("mega-imoveis-online");
+
+  // Quando um jogador se conecta
+  game.on("connect", () => {
+    console.log("Jogador conectado!");
+  });
+
+  // Exemplo: enviar uma mensagem para todos os jogadores
+  game.broadcast("Olá, bem-vindo ao jogo!");
+</script>
 </body>
 </html>
