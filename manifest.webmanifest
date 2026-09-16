@@ -1,0 +1,9 @@
+{
+  "name":"Mega Imóveis Online V2",
+  "short_name":"Mega Imóveis",
+  "start_url":".",
+  "display":"standalone",
+  "background_color":"#17202a",
+  "theme_color":"#f5c542",
+  "lang":"pt-BR"
+}

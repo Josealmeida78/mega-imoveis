@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17202a">
+<title>Mega Imóveis Online V2</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#17202a;--paper:#f7f0d7;--ink:#161616;--gold:#f5c542;--blue:#4389df;--red:#e85b5b;--green:#70a96a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,Arial,sans-serif;color:var(--ink)}
+button,input,select{font:inherit}button{border:2px solid #111;border-radius:10px;padding:10px 14px;background:var(--gold);font-weight:800;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}.wrap{width:min(980px,100%);margin:auto;padding:10px}
+header{background:var(--gold);border:3px solid #111;border-radius:15px;padding:10px;text-align:center;box-shadow:0 4px #111}
+h1{margin:0;font-size:28px}.tag{font-size:12px}
+.top{display:flex;gap:8px;margin:10px 0}.card{background:white;border:2px solid #111;border-radius:11px;padding:8px;flex:1}
+.card b{display:block}.dot{display:inline-block;width:14px;height:14px;border:2px solid #111;border-radius:50%;vertical-align:-2px;margin-right:4px}.r{background:var(--red)}.b{background:var(--blue)}
+.status{background:white;border:2px solid #111;border-radius:10px;padding:8px;text-align:center;font-weight:800;margin-bottom:8px}
+.board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);aspect-ratio:1;background:#c9b98b;border:4px solid #111;border-radius:8px;gap:2px;overflow:hidden}
+.cell{background:#fbf8ed;border:1px solid #777;padding:3px;display:flex;flex-direction:column;justify-content:space-between;text-align:center;font-size:clamp(6px,1.7vw,10px);font-weight:800;position:relative;overflow:hidden}
+.cell.property{background:#fff}.bar{height:7px;background:var(--green);margin:-3px -3px 2px;border-bottom:1px solid #333}.event{background:#dcecff}.tax{background:#ffe0d7}.start{background:var(--gold)}.rest{background:#e8e8e8}
+.price{font-size:clamp(6px,1.5vw,9px)}.owner{font-size:7px;color:#555}.tokens{display:flex;justify-content:center;gap:2px}.tokens .dot{width:12px;height:12px;margin:0}
+.center{grid-column:3/10;grid-row:3/10;background:#e0d0a3;border:2px solid #111;border-radius:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:10px}
+.center h2{margin:0;font-size:24px}.die{font-size:48px;line-height:1;margin:8px}.actions{text-align:center;padding:8px 0}.actions button{margin:3px}.log{background:#fff;border:2px solid #111;border-radius:10px;padding:8px;margin-top:8px;max-height:130px;overflow:auto;font-size:12px}.log div{padding:2px 0;border-bottom:1px solid #ddd}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modalbox{background:white;border:3px solid #111;border-radius:15px;padding:18px;max-width:390px;width:100%;box-shadow:0 6px #111;text-align:center}.modalbox h3{margin-top:0}.modalbox input{width:100%;padding:10px;border:2px solid #111;border-radius:9px;margin:5px 0}.modalbox button{margin:4px}
+.setup{display:flex;gap:8px;flex-wrap:wrap}.setup label{flex:1;min-width:150px;text-align:left}.setup input,.setup select{width:100%;padding:9px;border:2px solid #111;border-radius:9px}
+.small{font-size:11px;color:#ddd;text-align:center;margin:8px}
+@media(max-width:520px){h1{font-size:23px}.center h2{font-size:18px}.die{font-size:38px}.top{gap:5px}.card{font-size:11px}.card b{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>🏠 MEGA IMÓVEIS</h1><div class="tag">Online V2 • estratégia, imóveis e negociação</div></header>
+<div class="top">
+ <div class="card"><span class="dot r"></span><b id="p1name">Jogador 1</b>R$ <span id="p1money">1.500</span></div>
+ <div class="card"><span class="dot b"></span><b id="p2name">Jogador 2</b>R$ <span id="p2money">1.500</span></div>
+</div>
+<div class="status" id="status">Vez de Jogador 1</div>
+<div class="board" id="board"></div>
+<div class="actions">
+ <button id="roll" onclick="roll()">🎲 Jogar dados</button>
+ <button onclick="openSetup()">⚙️ Jogadores</button>
+ <button onclick="newGame()">↻ Nova partida</button>
+</div>
+<div class="log" id="log"></div>
+<div class="small">Jogo original. Não utiliza nomes, imagens ou tabuleiro do Banco Imobiliário.</div>
+</div>
+
+<div class="modal" id="modal"><div class="modalbox" id="modalbox"></div></div>
+
+<script>
+const S=[
+["INÍCIO","start",0,0],["Rua das Palmeiras","property",120,18],["Evento","event",0,0],["Av. Central","property",160,24],["Imposto","tax",-100,0],
+["Praça Azul","property",180,27],["Descanso","rest",0,0],["Rua do Sol","property",220,33],["Evento","event",0,0],["Av. das Flores","property",240,36],
+["Ponto Livre","rest",0,0],["Rua Imperial","property",260,39],["Imposto","tax",-120,0],["Av. Brasil","property",280,42],["Evento","event",0,0],
+["Jardim Real","property",300,45],["Descanso","rest",0,0],["Rua do Lago","property",320,48],["Evento","event",0,0],["Av. Vitória","property",350,52],
+["Parada Especial","rest",0,0],["Rua Verde","property",370,55],["Imposto","tax",-150,0],["Av. das Nações","property",400,60],["Evento","event",0,0],
+["Praia Nova","property",430,64],["Descanso","rest",0,0],["Rua Horizonte","property",450,68],["Evento","event",0,0],["Av. do Comércio","property",480,72],
+["Imposto","tax",-180,0],["Rua Diamante","property",500,75],["Evento","event",0,0],["Av. Premium","property",550,82],["Descanso","rest",0,0],
+["Jardins Nobres","property",600,90],["Evento","event",0,0],["Av. Majestosa","property",650,98],["Imposto","tax",-200,0],["Palácio Central","property",700,105]
+];
+const emoji=["⚀","⚁","⚂","⚃","⚄","⚅"];
+let state;
+
+function fresh(){return {players:[{name:"Jogador 1",pos:0,money:1500},{name:"Jogador 2",pos:0,money:1500}],turn:0,owners:{},log:[]}}
+function save(){localStorage.setItem("megaImoveisV2",JSON.stringify(state))}
+function load(){try{state=JSON.parse(localStorage.getItem("megaImoveisV2"))||fresh()}catch(e){state=fresh()}}
+function fmt(n){return n.toLocaleString("pt-BR")}
+function coords(i){let a=[];for(let x=0;x<11;x++)a.push([1,x+1]);for(let y=1;y<11;y++)a.push([y+1,11]);for(let x=10;x>=0;x--)a.push([11,x+1]);for(let y=10;y>=1;y--)a.push([y+1,1]);return a[i]}
+function log(t){state.log.unshift(t);state.log=state.log.slice(0,30);save();renderLog()}
+function renderLog(){document.getElementById("log").innerHTML=state.log.map(x=>"<div>"+x+"</div>").join("")}
+function render(){
+ document.getElementById("p1name").textContent=state.players[0].name;document.getElementById("p2name").textContent=state.players[1].name;
+ document.getElementById("p1money").textContent=fmt(state.players[0].money);document.getElementById("p2money").textContent=fmt(state.players[1].money);
+ document.getElementById("status").textContent="Vez de "+state.players[state.turn].name;
+ const board=document.getElementById("board");board.innerHTML="";
+ S.forEach((s,i)=>{let [r,c]=coords(i),e=document.createElement("div");e.className="cell "+s[1];e.style.gridRow=r;e.style.gridColumn=c;
+ let h=s[1]=="property"?'<div class="bar"></div>':"";
+ h+='<div>'+s[0]+'</div>';if(s[2]>0)h+='<div class="price">R$ '+fmt(s[2])+'</div>';
+ if(state.owners[i]!=null)h+='<div class="owner">Dono: '+state.players[state.owners[i]].name+'</div>';
+ h+='<div class="tokens">'+state.players.map((p,j)=>p.pos===i?'<span class="dot '+(j?'b':'r')+'"></span>':"").join("")+"</div>";e.innerHTML=h;board.appendChild(e)});
+ let c=document.createElement("div");c.className="center";c.innerHTML='<h2>MEGA IMÓVEIS</h2><div>'+state.players[state.turn].name+'</div><div class="die" id="die">🎲</div><div>J1: R$ '+fmt(state.players[0].money)+'</div><div>J2: R$ '+fmt(state.players[1].money)+'</div>';board.appendChild(c);renderLog();
+}
+function roll(){let btn=document.getElementById("roll");btn.disabled=true;let n=1+Math.floor(Math.random()*6);document.getElementById("die").textContent=emoji[n-1];setTimeout(()=>move(n),300)}
+function move(n){let p=state.players[state.turn],old=p.pos,next=(old+n)%40;if(old+n>=40){p.money+=200;log("🚩 "+p.name+" passou pelo INÍCIO e recebeu R$ 200.")}p.pos=next;render();setTimeout(()=>land(next),250)}
+function land(i){let s=S[i];
+ if(s[1]=="property"){if(state.owners[i]==null&&state.players[state.turn].money>=s[2])return buyPrompt(i);if(state.owners[i]!=null&&state.owners[i]!=state.turn){let o=state.owners[i],r=s[3];state.players[state.turn].money-=r;state.players[o].money+=r;log("💵 "+state.players[state.turn].name+" pagou R$ "+fmt(r)+" de aluguel.");if(state.players[state.turn].money<0)return gameOver(state.turn)}}
+ else if(s[1]=="tax"){state.players[state.turn].money+=s[2];log("🧾 "+state.players[state.turn].name+" pagou R$ "+fmt(Math.abs(s[2]))+" de imposto.")}
+ else if(s[1]=="event"){let vals=[100,150,-80,-120,200,-100],v=vals[Math.floor(Math.random()*vals.length)];state.players[state.turn].money+=v;log("🎴 Evento para "+state.players[state.turn].name+": "+(v>=0?"+":"-")+"R$ "+fmt(Math.abs(v))+".")}
+ endTurn()}
+function buyPrompt(i){let s=S[i];modal('<h3>🏠 Comprar imóvel?</h3><p><b>'+s[0]+'</b><br>Preço: R$ '+fmt(s[2])+'<br>Aluguel: R$ '+fmt(s[3])+'</p><button onclick="buy('+i+')">Comprar</button><button onclick="closeModal();endTurn()">Não comprar</button>')}
+function buy(i){let s=S[i];state.players[state.turn].money-=s[2];state.owners[i]=state.turn;log("🏠 "+state.players[state.turn].name+" comprou "+s[0]+" por R$ "+fmt(s[2])+".");closeModal();render();endTurn()}
+function endTurn(){state.turn=1-state.turn;save();render();document.getElementById("roll").disabled=false}
+function gameOver(i){document.getElementById("roll").disabled=true;modal('<h3>Fim de jogo</h3><p>'+state.players[i].name+' ficou sem dinheiro.</p><button onclick="closeModal();newGame()">Nova partida</button>')}
+function modal(x){document.getElementById("modalbox").innerHTML=x;document.getElementById("modal").style.display="flex"}
+function closeModal(){document.getElementById("modal").style.display="none"}
+function openSetup(){modal('<h3>⚙️ Jogadores</h3><div class="setup"><label>Jogador 1<input id="i1" value="'+state.players[0].name+'"></label><label>Jogador 2<input id="i2" value="'+state.players[1].name+'"></label></div><button onclick="setupSave()">Salvar nomes</button>')}
+function setupSave(){state.players[0].name=document.getElementById("i1").value.trim()||"Jogador 1";state.players[1].name=document.getElementById("i2").value.trim()||"Jogador 2";save();closeModal();render()}
+function newGame(){state=fresh();save();render()}
+load();render();
+</script>
+</body>
+</html>
